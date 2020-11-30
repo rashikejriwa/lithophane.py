@@ -1,10 +1,10 @@
-
+# this file creates the 3d visualizations (scatter and trisurf) with the image pixel locations and z values
 from PIL import Image
 import numpy as np
 import matplotlib.pyplot as plt
 
 #possible user inputs
-filename = 'Users\rashi\OneDrive\Desktop\Lithophane.py\images\smallerScotty.jpg'
+filename = 'images\smallerScotty.jpg'
 thickness= 255
 
 # takes in an image and converts it to black and white
@@ -28,8 +28,6 @@ def pixelData(greyImageArray):
             z = greyImageArray[x][y]
             pixelList.append([x, y, thickness - z])
     return pixelList
-
-print(pixelData(greyScale('images/pixels.jpg')))
 
 # finds the 3 dimensional x, y, z coordinate for each pixel (6 points per pixel)
 def pixelData3d(pixelList):
