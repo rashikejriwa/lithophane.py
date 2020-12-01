@@ -1,75 +1,69 @@
-import math
-from stl import mesh
 import numpy
+from stl import mesh
+import math
+from stlModel import *
 
-# find the max dimensions, so we can know the bounding box, getting the height,
-# width, length (because these are the step size)...
-def find_mins_maxs(obj):
-    minx = obj.x.min()
-    maxx = obj.x.max()
-    miny = obj.y.min()
-    maxy = obj.y.max()
-    minz = obj.z.min()
-    maxz = obj.z.max()
-    return minx, maxx, miny, maxy, minz, maxz
+#user inputs for a cube shaped file
+def userInput():
+    imageDict = dict()
+    print('Number of pictures: ')
+    imageNum = input()
+    for n in range(int(imageNum)):
+        print('Give an image path:')
+        filename = input()
+        createStl(greyScale(filename), n)
+        imageDict[n] = n.stl
+    return imageDict
 
-def translate(_solid, step, padding, multiplier, axis):
-    if 'x' == axis:
-        items = 0, 3, 6
-    elif 'y' == axis:
-        items = 1, 4, 7
-    elif 'z' == axis:
-        items = 2, 5, 8
-    else:
-        raise RuntimeError('Unknown axis %r, expected x, y or z' % axis)
+def dimensionsCheck(imageDict):
+    xMin, xMax, yMin, yMax, zMin, zMax = None, None, None, None, None, None
+    for image in imageDict:
+        stlModel = imageDict[image]
+        xMinNew, xMaxNew = stlModel.x.min(), stlModel.x.max()
+        yMinNew, yMaxNew = stlModel.y.min(), stlModel.y.max()
+        zMinNew, zMaxNew = stlModel.z.min(), stlModel.z.max()
+        if (xMaxNew < xMax and yMaxNew < yMax) or xMin == None:
+            xMin, xMax, yMin, yMax, zMin, zMax = xMinNew, xMaxNew, yMinNew, yMaxNew, zMinNew, zMaxNew
+    return xMin, xMax, yMin, yMax, zMin, zMax
 
-    # _solid.points.shape == [:, ((x, y, z), (x, y, z), (x, y, z))]
-    #_solid.points[:, items] += (step * multiplier) + (padding * multiplier)
+############################################################################################################
+# by this point all of the images should be the same size
+# the stlModel.py program should use the xMin, xMax, yMin, yMax, zMin, zMax values determined in the 
+# functions written above to create n stl files of the same dimensions
+# add resizing to stlModel.py
 
+def dimensions(stlModel):
+    xMin, xMax = stlModel.x.min(), stlModel.x.max()
+    yMin, yMax = stlModel.y.min(), stlModel.y.max()
+    zMin, zMax = stlModel.z.min(), stlModel.z.max()
+    return xMin, xMax, yMin, yMax, zMin, zMax
 
-def copy_obj(obj, dims, num_rows, num_cols, num_layers):
-    w, l, h = dims
-    copies = []
-    for layer in range(num_layers):
-        for row in range(num_rows):
-            for col in range(num_cols):
-                # skip the position where original being copied is
-                if row == 0 and col == 0 and layer == 0:
-                    continue
-                _copy = mesh.Mesh(obj.data.copy())
-                # pad the space between objects by 10% of the dimension being
-                # translated
-                if col != 0:
-                    translate(_copy, w, w / 10., col, 'x')
-                if row != 0:
-                    translate(_copy, l, l / 10., row, 'y')
-                if layer != 0:
-                    translate(_copy, h, h / 10., layer, 'z')
-                copies.append(_copy)
-    return copies
+stlModel1 = mesh.Mesh.from_file('lithophane.stl')
+stlModel2 = mesh.Mesh.from_file('lithophane.stl')
+stlModel3 = mesh.Mesh.from_file('lithophane.stl')
+stlModel4 = mesh.Mesh.from_file('lithophane.stl')
 
-# Using an existing stl file:
-main_body = mesh.Mesh.from_file('lithophane.stl')
+numOfFaces = 4
+border = 10
 
-# rotate along Y
-main_body.rotate([0.0, 0.5, 0.0], math.radians(90))
+def cubeStlModel(numOfFaces, border):
+    angleInc = 360 / numOfFaces
 
-minx, maxx, miny, maxy, minz, maxz = find_mins_maxs(main_body)
-w1 = maxx - minx
-l1 = maxy - miny
-h1 = maxz - minz
-copies = copy_obj(main_body, (w1, l1, h1), 2, 2, 1)
+    stlModel1.rotate([0.5, 0, 0], math.radians(angleInc * 0))
 
-# I wanted to add another related STL to the final STL
-twist_lock = mesh.Mesh.from_file('lithophane.stl')
-minx, maxx, miny, maxy, minz, maxz = find_mins_maxs(twist_lock)
-w2 = maxx - minx
-l2 = maxy - miny
-h2 = maxz - minz
-translate(twist_lock, w1, w1 / 10., 3, 'x')
-copies2 = copy_obj(twist_lock, (w2, l2, h2), 2, 2, 1)
-combined = mesh.Mesh(numpy.concatenate([main_body.data, twist_lock.data] +
-                                    [copy.data for copy in copies] +
-                                    [copy.data for copy in copies2]))
+    xMin, xMax, yMin, yMax, zMin, zMax = dimensions(stlModel2)
+    stlModel2.rotate([0.5, 0, 0], math.radians(angleInc * 1))
+    stlModel2.y += yMax - border
 
-combined.save('combined.stl')
+    stlModel3.rotate([0.5, 0, 0], math.radians(angleInc * 3))
+    stlModel3.z -= yMax - border
+
+    stlModel4.rotate([0.5, 0, 0], math.radians(angleInc * 2))
+    stlModel4.z -= yMax - border
+    stlModel4.y += yMax - border
+
+    combined = mesh.Mesh(numpy.concatenate([stlModel1.data, stlModel2.data, stlModel3.data, stlModel4.data]))
+    combined.save('combined.stl')
+
+cubeStlModel(numOfFaces, border)
+
