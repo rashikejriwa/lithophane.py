@@ -1,53 +1,67 @@
+from PIL import Image
 import numpy
 from stl import mesh
 import math
 from stlModel import *
 
-#user inputs for a cube shaped file
-def userInput():
-    imageDict = dict()
-    print('Number of pictures: ')
-    imageNum = input()
-    for n in range(int(imageNum)):
-        print('Give an image path:')
-        filename = input()
-        createStl(greyScale(filename), n)
-        imageDict[n] = n.stl
-    return imageDict
+# user inputs will be 4 files - the code below will be written assuming they are a list
+# uses functions written in the stlModel.py file
 
-def dimensionsCheck(imageDict):
-    xMin, xMax, yMin, yMax, zMin, zMax = None, None, None, None, None, None
-    for image in imageDict:
-        stlModel = imageDict[image]
-        xMinNew, xMaxNew = stlModel.x.min(), stlModel.x.max()
-        yMinNew, yMaxNew = stlModel.y.min(), stlModel.y.max()
-        zMinNew, zMaxNew = stlModel.z.min(), stlModel.z.max()
-        if (xMaxNew < xMax and yMaxNew < yMax) or xMin == None:
-            xMin, xMax, yMin, yMax, zMin, zMax = xMinNew, xMaxNew, yMinNew, yMaxNew, zMinNew, zMaxNew
-    return xMin, xMax, yMin, yMax, zMin, zMax
+# return the minimum dimensions of all of the files inputed
+def minImageDimensions(imageFileList):
+    imageSizeList = []
+    for imageFile in imageFileList:
+        filename = imageFile
+        greyImageArray = greyScale(filename)
+        imageSizeList.append((len(greyImageArray), len(greyImageArray[0])))
 
-############################################################################################################
-# by this point all of the images should be the same size
-# the stlModel.py program should use the xMin, xMax, yMin, yMax, zMin, zMax values determined in the 
-# functions written above to create n stl files of the same dimensions
-# add resizing to stlModel.py
+    minPixelX = 0
+    minPixelY = 0
+    minPixelArea = 0
+    for imageSize in imageSizeList:
+        pixelX = imageSize[0]
+        pixelY = imageSize[1]
+        pixelArea = pixelX * pixelY
+        if (minPixelArea == 0) or (pixelArea < minPixelArea):
+            minPixelX = pixelX
+            minPixelY = pixelY
+            minPixelArea = pixelX * pixelY
 
+    return (minPixelX, minPixelY)
+
+# resizes images and creates the stl models for each resized face/file
+def createStlModels(imageFileList):
+    stlFaceFiles = []
+    (xDimension, yDimension) = minImageDimensions(imageFileList)
+    for imageFile in imageFileList:
+        image = Image.open(imageFile)
+        image = image.resize((xDimension, yDimension))
+        image.save('imageFile.jpg')
+
+        imageName = imageFile.split('/')[-1]
+        stlName = imageName.split('.')[0]
+        stlFaceFiles.append(f'{stlName}.stl')
+
+        createStl(greyScale('imageFile.jpg'), stlName)
+    return stlFaceFiles
+
+# gets the dimensions of the stl model
 def dimensions(stlModel):
     xMin, xMax = stlModel.x.min(), stlModel.x.max()
     yMin, yMax = stlModel.y.min(), stlModel.y.max()
     zMin, zMax = stlModel.z.min(), stlModel.z.max()
     return xMin, xMax, yMin, yMax, zMin, zMax
 
-stlModel1 = mesh.Mesh.from_file('lithophane.stl')
-stlModel2 = mesh.Mesh.from_file('lithophane.stl')
-stlModel3 = mesh.Mesh.from_file('lithophane.stl')
-stlModel4 = mesh.Mesh.from_file('lithophane.stl')
+# function for creating the cube 3D stl model
+def cubeStlModel(imageFileList, numOfFaces, border):
+    stlFaceFiles = createStlModels(imageFileList)
 
-numOfFaces = 4
-border = 10
-
-def cubeStlModel(numOfFaces, border):
     angleInc = 360 / numOfFaces
+    stlModel1 = mesh.Mesh.from_file(stlFaceFiles[0])
+    stlModel2 = mesh.Mesh.from_file(stlFaceFiles[1])
+    stlModel3 = mesh.Mesh.from_file(stlFaceFiles[2])
+    stlModel4 = mesh.Mesh.from_file(stlFaceFiles[3])
+    # stlModel5 = mesh.Mesh.from_file(stlFaceFiles[4])
 
     stlModel1.rotate([0.5, 0, 0], math.radians(angleInc * 0))
 
@@ -62,8 +76,33 @@ def cubeStlModel(numOfFaces, border):
     stlModel4.z -= yMax - border
     stlModel4.y += yMax - border
 
-    combined = mesh.Mesh(numpy.concatenate([stlModel1.data, stlModel2.data, stlModel3.data, stlModel4.data]))
-    combined.save('combined.stl')
+    # stlModel5.rotate([0.5, 0, 0], math.radians(angleInc * 0))
+    # stlModel5.z -= yMax + border
 
-cubeStlModel(numOfFaces, border)
+    cubeStlModel = mesh.Mesh(numpy.concatenate([stlModel1.data, stlModel2.data, stlModel3.data, stlModel4.data]))
+    cubeStlModel.save('cubeStlModel.stl')
+
+# function that will allow testing of code without UI but with user inputs
+def userInput():
+    imageDict = dict()
+    print('Number of pictures: ')
+    imageNum = input()
+    for n in range(int(imageNum)):
+        print('Give an image path:')
+        filename = input()
+        createStl(greyScale(filename), n)
+        imageDict[n] = n.stl
+    return imageDict
+
+# call functions
+numOfFaces = 4
+border = 5
+height = 5
+
+createStl(greyScale(filename), 'cube')
+imageFileList = ['images/carnegie.jpg', 'images/gates.jpg', 'images/smallScotty.jpg', 'images/smallScotty.jpg']
+
+cubeStlModel(imageFileList, numOfFaces, border)
+
+
 
