@@ -11,9 +11,6 @@ def greyScale(filename):
     # array of [row, row, row ...], row is a list of [col, col, col ...]
     # array is [[col, col ...], [col, col ...] ...]
     greyImageArray = np.asarray(greyImage) 
-    # plt.axis('off')
-    # plt.imshow(greyImage, cmap = 'gray')
-    # plt.show()
     return greyImageArray
 
 def createTriFace(faceList):
@@ -32,7 +29,7 @@ def createTriFace(faceList):
 
     return northFace1, northFace2, eastFace1, eastFace2, southFace1, southFace2, westFace1, westFace2 
 
-def createStl(greyImageArray, stlFileName):  
+def createStl(greyImageArray, stlFileName, height, border):  
     # creates the top surface of the lithophane 
     pixelX, pixelY = len(greyImageArray), len(greyImageArray[0])
 
@@ -90,15 +87,8 @@ def createStl(greyImageArray, stlFileName):
             lithophane.vectors[i][j] = facesArray[i][j]
     
     lithophane.save(f'{stlFileName}.stl')
-    
-# possible user inputs
-filename = 'images/redCube.jpg'
+
+
+border = 5
 height = 5
-border = 1
-
-createStl(greyScale(filename), 'cube')
-
-
-
-
-
+imageFileList = ['images/carnegie.jpg', 'images/gates.jpg', 'images/smallScotty.jpg', 'images/smallScotty.jpg', 'images/smallScotty.jpg', 'images/smallScotty.jpg']

@@ -30,7 +30,7 @@ def minImageDimensions(imageFileList):
     return (minPixelX, minPixelY)
 
 # resizes images and creates the stl models for each resized face/file
-def createStlModels(imageFileList):
+def createStlModels(imageFileList, height, border):
     stlFaceFiles = []
     (xDimension, yDimension) = minImageDimensions(imageFileList)
     for imageFile in imageFileList:
@@ -42,7 +42,7 @@ def createStlModels(imageFileList):
         stlName = imageName.split('.')[0]
         stlFaceFiles.append(f'{stlName}.stl')
 
-        createStl(greyScale('imageFile.jpg'), stlName)
+        createStl(greyScale('imageFile.jpg'), stlName, height, border)
     return stlFaceFiles
 
 # gets the dimensions of the stl model
@@ -53,9 +53,10 @@ def dimensions(stlModel):
     return xMin, xMax, yMin, yMax, zMin, zMax
 
 # function for creating the cube 3D stl model
-def cubeStlModel(imageFileList, numOfFaces, border):
-    stlFaceFiles = createStlModels(imageFileList)
+def cubeStlModel(imageFileList, height, border):
+    stlFaceFiles = createStlModels(imageFileList, height, border)
 
+    numOfFaces = 4
     angleInc = 360 / numOfFaces
     stlModel1 = mesh.Mesh.from_file(stlFaceFiles[0])
     stlModel2 = mesh.Mesh.from_file(stlFaceFiles[1])
@@ -67,14 +68,14 @@ def cubeStlModel(imageFileList, numOfFaces, border):
 
     xMin, xMax, yMin, yMax, zMin, zMax = dimensions(stlModel2)
     stlModel2.rotate([0.5, 0, 0], math.radians(angleInc * 1))
-    stlModel2.y += yMax - border
+    stlModel2.y += yMax - border - (height - border)
 
     stlModel3.rotate([0.5, 0, 0], math.radians(angleInc * 3))
-    stlModel3.z -= yMax - border
+    stlModel3.z -= yMax - border - (height - border)
 
     stlModel4.rotate([0.5, 0, 0], math.radians(angleInc * 2))
-    stlModel4.z -= yMax - border
-    stlModel4.y += yMax - border
+    stlModel4.z -= yMax - border - (height - border)
+    stlModel4.y += yMax - border - (height - border)
 
     # stlModel5.rotate([0.5, 0, 0], math.radians(angleInc * 0))
     # stlModel5.z -= yMax + border
@@ -82,27 +83,123 @@ def cubeStlModel(imageFileList, numOfFaces, border):
     cubeStlModel = mesh.Mesh(numpy.concatenate([stlModel1.data, stlModel2.data, stlModel3.data, stlModel4.data]))
     cubeStlModel.save('cubeStlModel.stl')
 
-# function that will allow testing of code without UI but with user inputs
-def userInput():
-    imageDict = dict()
-    print('Number of pictures: ')
-    imageNum = input()
-    for n in range(int(imageNum)):
-        print('Give an image path:')
-        filename = input()
-        createStl(greyScale(filename), n)
-        imageDict[n] = n.stl
-    return imageDict
+def hexagonalStlModel(imageFileList, height, border):
+    stlFaceFiles = createStlModels(imageFileList, height, border)
 
-# call functions
-numOfFaces = 4
+    numOfFaces = 6
+    angleInc = 360 / numOfFaces
+    stlModel1 = mesh.Mesh.from_file(stlFaceFiles[0])
+    stlModel2 = mesh.Mesh.from_file(stlFaceFiles[1])
+    stlModel3 = mesh.Mesh.from_file(stlFaceFiles[2])
+    stlModel4 = mesh.Mesh.from_file(stlFaceFiles[3])
+    stlModel5 = mesh.Mesh.from_file(stlFaceFiles[4])
+    stlModel6 = mesh.Mesh.from_file(stlFaceFiles[5])
+
+    xMin, xMax, yMin, yMax, zMin, zMax = dimensions(stlModel1)
+
+    stlModel1.rotate([0.5, 0, 0], math.radians(angleInc * 0))
+    stlModel1.y += - xMax + border
+
+    stlModel2.rotate([0.5, 0, 0], math.radians(angleInc * 1))
+    
+    stlModel3.rotate([0.5, 0, 0], math.radians(angleInc * 2))
+    stlModel3.z += - xMax * math.sin(angleInc * math.pi / 180)
+    stlModel3.y += xMax * math.cos(angleInc * math.pi / 180)
+
+    stlModel4.rotate([0.5, 0, 0], math.radians(angleInc * 3))
+    stlModel4.z += - 2 * xMax * math.sin(angleInc * math.pi / 180)
+
+    stlModel5.rotate([0.5, 0, 0], math.radians(angleInc * 4))
+    stlModel5.y += - xMax + border
+    stlModel5.z += - 2 * xMax * math.sin(angleInc * math.pi / 180)
+    
+    stlModel6.rotate([0.5, 0, 0], math.radians(angleInc * 5))
+    stlModel6.y += - yMax - xMax * math.cos(angleInc * math.pi / 180) + border
+    stlModel6.z += - xMax * math.sin(angleInc * math.pi / 180)
+
+    cubeStlModel = mesh.Mesh(numpy.concatenate([stlModel1.data, stlModel2.data, stlModel3.data, stlModel4.data, stlModel5.data, stlModel6.data]))
+    cubeStlModel.save('hexagonalStlModel.stl')
+
+def faceNumberStlModel(imageFileList, height, border):
+    stlFaceFiles = createStlModels(imageFileList, height, border)
+
+    numOfFaces = 3
+    angleInc = 360 / numOfFaces
+    stlModel1 = mesh.Mesh.from_file(stlFaceFiles[0])
+    stlModel2 = mesh.Mesh.from_file(stlFaceFiles[1])
+    stlModel3 = mesh.Mesh.from_file(stlFaceFiles[2])
+    stlModel4 = mesh.Mesh.from_file(stlFaceFiles[3])
+    #stlModel5 = mesh.Mesh.from_file(stlFaceFiles[4])
+
+    xMin, xMax, yMin, yMax, zMin, zMax = dimensions(stlModel1)
+
+    stlModel1.rotate([0, 0, 0.5], math.radians(angleInc * 0))
+    #stlModel1.y += - xMax #+ abs(height * math.cos(math.radians(30)))
+
+    stlModel2.rotate([0, 0, 0.5], math.radians(angleInc * 1))
+    
+
+    stlModel3.rotate([0, 0, 0.5], math.radians(angleInc * 2))
+    #stlModel3.z += - xMax * math.sin(math.radians(angleInc))  
+    #stlModel3.y += xMax * math.cos(math.radians(angleInc)) 
+
+    # stlModel4.rotate([0.5, 0, 0], math.radians(angleInc * 3))
+    # stlModel4.z += - 2 * xMax * math.sin(angleInc * math.pi / 180)
+
+    # stlModel5.rotate([0.5, 0, 0], math.radians(angleInc * 4))
+    # stlModel5.y += - xMax + border
+    # stlModel5.z += - 2 * xMax * math.sin(angleInc * math.pi / 180)
+    
+    # stlModel6.rotate([0.5, 0, 0], math.radians(angleInc * 5))
+    # stlModel6.y += - yMax - xMax * math.cos(angleInc * math.pi / 180) + border
+    # stlModel6.z += - xMax * math.sin(angleInc * math.pi / 180)
+
+    cubeStlModel = mesh.Mesh(numpy.concatenate([stlModel1.data, stlModel2.data, stlModel3.data]))
+    cubeStlModel.save('faceNumberStlModel.stl')
+
+def test(imageFileList, height, border):
+    stlFaceFiles = createStlModels(imageFileList, height, border)
+
+    numOfFaces = 4
+    angleInc = 360 / numOfFaces
+    rotateAngle = angleInc / 2
+    stlModel1 = mesh.Mesh.from_file(stlFaceFiles[0])
+    stlModel2 = mesh.Mesh.from_file(stlFaceFiles[1])
+    stlModel3 = mesh.Mesh.from_file(stlFaceFiles[2])
+    stlModel4 = mesh.Mesh.from_file(stlFaceFiles[3])
+    xMin, xMax, yMin, yMax, zMin, zMax = dimensions(stlModel1)
+
+    stlModel1.y += - yMax / 2
+    stlModel1.z += yMax / 2 / math.tan(math.radians(rotateAngle))
+    stlModel1.rotate([0.5, 0, 0], math.radians(angleInc * 0))
+
+    stlModel2.y += - yMax / 2
+    stlModel2.z += yMax / 2 / math.tan(math.radians(rotateAngle))
+    stlModel2.rotate([0.5, 0, 0], math.radians(angleInc * 1))
+
+    stlModel3.y += - yMax / 2
+    stlModel3.z += yMax / 2 / math.tan(math.radians(rotateAngle))
+    stlModel3.rotate([0.5, 0, 0], math.radians(angleInc * 2))
+
+    stlModel4.y += - yMax / 2
+    stlModel4.z += yMax / 2 / math.tan(math.radians(rotateAngle))
+    stlModel4.rotate([0.5, 0, 0], math.radians(angleInc * 3))
+    # stlModel2.y += - yMax / 2
+    # stlModel2.x += - yMax / 2 / math.tan(math.radians(60))
+    # stlModel3.y += - yMax / 2
+    # stlModel3.x += - yMax / 2 / math.tan(math.radians(60))
+
+    # stlModel1.rotate([0, 0, 0.5], math.radians(angleInc * 0))
+    # stlModel2.rotate([0, 0, 0.5], math.radians(angleInc * 1))
+    # stlModel3.rotate([0, 0, 0.5], math.radians(angleInc * 2))
+
+    cubeStlModel = mesh.Mesh(numpy.concatenate([stlModel1.data, stlModel2.data, stlModel3.data, stlModel4.data]))
+    cubeStlModel.save('faceNumberStlModel.stl')
+
 border = 5
-height = 5
-
-createStl(greyScale(filename), 'cube')
-imageFileList = ['images/carnegie.jpg', 'images/gates.jpg', 'images/smallScotty.jpg', 'images/smallScotty.jpg']
-
-cubeStlModel(imageFileList, numOfFaces, border)
-
-
+height = 10
+imageFileList = ['images/carnegie.jpg', 'images/gates.jpg', 'images/smallScotty.jpg', 'images/smallScotty.jpg', 'images/smallScotty.jpg', 'images/smallScotty.jpg']
+#hexagonalStlModel(imageFileList, height, border)
+#faceNumberStlModel(imageFileList, height, border)
+test(imageFileList, height, border)
 
